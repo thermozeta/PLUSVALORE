@@ -1,0 +1,42 @@
+name: Plusvalore Corner Scanner
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # Ogni ora
+  workflow_dispatch:        # Trigger manuale da GitHub
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installa dipendenze
+        run: pip install -r requirements.txt
+
+      - name: Esegui scanner
+        run: python scanner.py
+        env:
+          TOTALCORNER_TOKEN:   ${{ secrets.TOTALCORNER_TOKEN }}
+          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          ANTHROPIC_API_KEY:   ${{ secrets.ANTHROPIC_API_KEY }}
+          ONESIGNAL_APP_ID:    ${{ secrets.ONESIGNAL_APP_ID }}
+          ONESIGNAL_API_KEY:   ${{ secrets.ONESIGNAL_API_KEY }}
+
+      - name: Aggiorna picks.json e history.json nel repository
+        run: |
+          git config --local user.email "bot@plusvalore.it"
+          git config --local user.name "Plusvalore Bot"
+          git add picks.json history.json
+          git diff --staged --quiet || git commit -m "scan: $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push

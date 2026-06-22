@@ -1,0 +1,7 @@
+{
+  "corner_threshold": 9.5,
+  "min_combined_avg": 10.0,
+  "min_over_pct": 60,
+  "alert_hours_before": 2,
+  "active": true
+}

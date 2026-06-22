@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Plusvalore – Corner Intelligence</title>
+
+<!-- OneSignal Push SDK — sostituisci YOUR_ONESIGNAL_APP_ID -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({ appId: "YOUR_ONESIGNAL_APP_ID" });
+  });
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#07090F;color:#EEF2FF;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;padding-bottom:80px}
+
+/* ── Header ── */
+#header{background:#07090F;border-bottom:1px solid #111827;padding:16px 16px 0;position:sticky;top:0;z-index:100}
+#header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+#logo{font-size:22px;font-weight:900;letter-spacing:-1px;color:#22C55E}
+#logo span{font-size:9px;display:block;letter-spacing:3px;color:#1f2937;font-weight:400;margin-top:1px}
+#scan-status{text-align:right;font-size:11px;color:#374151}
+#scan-status b{color:#6B7280;display:block;margin-bottom:1px}
+
+/* ── Nav tabs ── */
+nav{display:flex;gap:0;border-bottom:none;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+.tab{flex:1;min-width:80px;padding:10px 4px;background:none;border:none;border-bottom:2px solid transparent;color:#374151;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:0.3px;transition:all 0.15s;white-space:nowrap}
+.tab.active{color:#22C55E;border-bottom-color:#22C55E}
+
+/* ── Sections ── */
+.section{padding:16px;max-width:600px;margin:0 auto;display:none}
+.section.active{display:block}
+
+/* ── Stats row ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.stat-box{background:#0D1117;border-radius:10px;padding:12px 10px;border:1px solid #161D2B;text-align:center}
+.stat-val{font-size:20px;font-weight:900;line-height:1}
+.stat-lbl{font-size:9px;color:#374151;margin-top:4px;letter-spacing:0.5px}
+.green{color:#22C55E}.yellow{color:#F59E0B}.gray{color:#6B7280}.red{color:#EF4444}
+
+/* ── Pick card ── */
+.card{background:#0D1117;border-radius:14px;margin-bottom:12px;overflow:hidden;border:1px solid #161D2B}
+.card.strong{border-color:#14532d}
+.card.alerted{border-color:#92400E}
+.card-bar{height:3px;background:linear-gradient(90deg,#22c55e,#16a34a,#052e16)}
+.card-bar.medium{background:linear-gradient(90deg,#3B82F6,#1D4ED8)}
+.card-bar.alerted{background:linear-gradient(90deg,#F59E0B,#92400E)}
+.card-body{padding:14px 16px}
+.card-row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.card-league{font-size:9px;color:#374151;letter-spacing:1.5px;text-transform:uppercase;font-weight:600}
+.card-badges{display:flex;gap:6px;align-items:center}
+.badge{font-size:9px;border-radius:5px;padding:2px 7px;font-weight:700;letter-spacing:0.8px}
+.badge.strong{background:#052e16;color:#4ade80}
+.badge.medium{background:#1e3a5f;color:#93C5FD}
+.badge.alerted{background:#451a03;color:#FCD34D}
+.card-time{font-size:13px;font-weight:700;background:#161D2B;border-radius:7px;padding:3px 9px}
+.card-teams{font-size:16px;font-weight:800;margin-bottom:12px;line-height:1.3;letter-spacing:-0.2px}
+.card-teams .vs{color:#374151;font-weight:400;font-size:13px}
+.countdown{font-size:11px;color:#F59E0B;margin-bottom:10px;font-weight:600;letter-spacing:0.5px}
+.countdown.soon{color:#22C55E;animation:pulse 1.5s infinite}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+.sc{background:#07090F;border-radius:8px;padding:9px 6px;text-align:center}
+.sc-val{font-size:16px;font-weight:900}
+.sc-lbl{font-size:8px;color:#374151;margin-top:2px}
+.analysis{font-size:12px;color:#9CA3AF;line-height:1.6;padding:9px 11px;background:#07090F;border-radius:8px;border-left:2px solid #22C55E;margin-bottom:12px}
+.card-footer{display:flex;justify-content:space-between;align-items:center}
+.combined-info{font-size:11px;color:#374151}
+.combined-info b{font-size:18px;font-weight:900;color:#EEF2FF}
+.btn-tg{background:#161D2B;color:#9CA3AF;border:1px solid #1f2937;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.15s}
+.btn-tg.copied{background:#052e16;color:#4ade80;border-color:#14532d}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:48px 20px}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-title{font-size:15px;font-weight:600;color:#6B7280;margin-bottom:6px}
+.empty-desc{font-size:12px;color:#374151;line-height:1.7}
+
+/* ── Impostazioni ── */
+.settings-card{background:#0D1117;border-radius:14px;padding:16px;border:1px solid #161D2B;margin-bottom:12px}
+.settings-title{font-size:11px;color:#22C55E;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:14px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #111827}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;color:#9CA3AF}
+.setting-val{font-size:15px;font-weight:800;color:#22C55E}
+.settings-note{background:#0a1a10;border:1px solid #14532d;border-radius:10px;padding:12px;font-size:12px;color:#6EE7B7;line-height:1.7;margin-top:4px}
+.settings-note a{color:#22C55E}
+
+/* ── Notifiche ── */
+.notif-card{background:#0D1117;border-radius:14px;padding:18px;border:1px solid #161D2B;margin-bottom:12px}
+.notif-title{font-size:13px;font-weight:700;margin-bottom:6px}
+.notif-desc{font-size:12px;color:#6B7280;line-height:1.6;margin-bottom:14px}
+.btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#052e16;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s}
+.btn-primary:disabled{background:#052e16;color:#4ade80;cursor:default;border:1px solid #14532d}
+.notif-status{margin-top:10px;font-size:12px;color:#6B7280;text-align:center}
+.channel-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #111827}
+.channel-row:last-child{border-bottom:none}
+.channel-icon{font-size:22px}
+.channel-info{flex:1}
+.channel-name{font-size:13px;font-weight:700}
+.channel-sub{font-size:11px;color:#6B7280;margin-top:2px}
+.channel-status{font-size:11px;font-weight:700;color:#22C55E}
+
+/* ── Storico ── */
+.history-card{background:#0D1117;border-radius:10px;padding:12px 14px;margin-bottom:8px;border:1px solid #161D2B;display:flex;justify-content:space-between;align-items:center}
+.history-left{flex:1}
+.history-teams{font-size:13px;font-weight:700}
+.history-meta{font-size:10px;color:#374151;margin-top:3px}
+.history-right{text-align:right}
+.history-result{font-size:13px;font-weight:800}
+.history-pick{font-size:10px;color:#6B7280;margin-top:2px}
+.win{color:#22C55E}.loss{color:#EF4444}.pending{color:#F59E0B}
+
+/* ── Storico stats ── */
+.track-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:16px}
+.track-box{background:#0D1117;border-radius:10px;padding:10px 6px;border:1px solid #161D2B;text-align:center}
+.track-val{font-size:16px;font-weight:900;color:#22C55E}
+.track-lbl{font-size:8px;color:#374151;margin-top:3px;letter-spacing:0.5px}
+
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+
+/* ── Footer nav ── */
+#footer-nav{position:fixed;bottom:0;left:0;right:0;background:#0D1117;border-top:1px solid #161D2B;display:flex;z-index:100}
+.fn-btn{flex:1;padding:10px 4px;background:none;border:none;color:#374151;font-size:9px;font-weight:600;cursor:pointer;letter-spacing:0.5px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:color 0.15s}
+.fn-btn .icon{font-size:18px}
+.fn-btn.active{color:#22C55E}
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div id="header">
+  <div id="header-top">
+    <div id="logo">PLUSVALORE <span>CORNER INTELLIGENCE</span></div>
+    <div id="scan-status"><b>ULTIMA SCAN</b><span id="last-scan">--:--</span></div>
+  </div>
+  <nav>
+    <button class="tab active" onclick="showSection('dashboard',this)">📊 Dashboard</button>
+    <button class="tab" onclick="showSection('storico',this)">📋 Storico</button>
+    <button class="tab" onclick="showSection('impostazioni',this)">⚙️ Filtri</button>
+    <button class="tab" onclick="showSection('notifiche',this)">🔔 Notifiche</button>
+  </nav>
+</div>
+
+<!-- ── DASHBOARD ── -->
+<div id="sec-dashboard" class="section active">
+  <div class="stats-row" id="stats-row">
+    <div class="stat-box"><div class="stat-val green" id="s-picks">–</div><div class="stat-lbl">Segnali oggi</div></div>
+    <div class="stat-box"><div class="stat-val yellow" id="s-strong">–</div><div class="stat-lbl">Segnali forti</div></div>
+    <div class="stat-box"><div class="stat-val gray" id="s-total">–</div><div class="stat-lbl">Partite scansionate</div></div>
+  </div>
+  <div id="picks-container">
+    <div class="empty"><div class="empty-icon">⏳</div><div class="empty-title">Caricamento...</div></div>
+  </div>
+</div>
+
+<!-- ── STORICO ── -->
+<div id="sec-storico" class="section">
+  <div class="track-row" id="track-row">
+    <div class="track-box"><div class="track-val" id="t-tot">–</div><div class="track-lbl">Pick totali</div></div>
+    <div class="track-box"><div class="track-val" id="t-win">–</div><div class="track-lbl">Vinte</div></div>
+    <div class="track-box"><div class="track-val" id="t-wr">–%</div><div class="track-lbl">Winrate</div></div>
+    <div class="track-box"><div class="track-val" id="t-roi">–%</div><div class="track-lbl">ROI</div></div>
+  </div>
+  <div id="history-container">
+    <div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nessuno storico</div><div class="empty-desc">Le partite passate appariranno qui.</div></div>
+  </div>
+</div>
+
+<!-- ── IMPOSTAZIONI ── -->
+<div id="sec-impostazioni" class="section">
+  <div class="settings-card">
+    <div class="settings-title">Parametri Filtro</div>
+    <div class="setting-row"><span class="setting-label">Soglia angoli</span><span class="setting-val" id="cfg-threshold">–</span></div>
+    <div class="setting-row"><span class="setting-label">Media combinata minima</span><span class="setting-val" id="cfg-combined">–</span></div>
+    <div class="setting-row"><span class="setting-label">Over % minima storica</span><span class="setting-val" id="cfg-pct">–</span></div>
+    <div class="setting-row"><span class="setting-label">Alert prima del kickoff</span><span class="setting-val" id="cfg-hours">–</span></div>
+    <div class="setting-row"><span class="setting-label">Scanner attivo</span><span class="setting-val" id="cfg-active">–</span></div>
+  </div>
+  <div class="settings-note">
+    ✏️ Per modificare i parametri, apri il file <b>config.json</b> nel tuo repository GitHub e modifica i valori. Il sistema applicherà i nuovi parametri alla scansione successiva.<br><br>
+    🔗 <a href="https://github.com" target="_blank">Apri GitHub →</a>
+  </div>
+</div>
+
+<!-- ── NOTIFICHE ── -->
+<div id="sec-notifiche" class="section">
+  <div class="notif-card">
+    <div class="notif-title">🔔 Notifiche Browser</div>
+    <div class="notif-desc">Ricevi un alert sul tuo dispositivo ogni volta che il sistema trova una partita qualificante, anche con il sito chiuso.</div>
+    <button class="btn-primary" id="btn-push" onclick="enablePush()">Attiva Notifiche</button>
+    <div class="notif-status" id="push-status"></div>
+  </div>
+
+  <div class="notif-card">
+    <div class="notif-title">📡 Canali attivi</div>
+    <div class="channel-row">
+      <div class="channel-icon">📱</div>
+      <div class="channel-info">
+        <div class="channel-name">Telegram VIP</div>
+        <div class="channel-sub">Alert automatici sul canale abbonati</div>
+      </div>
+      <div class="channel-status">✓ ATTIVO</div>
+    </div>
+    <div class="channel-row">
+      <div class="channel-icon">🌐</div>
+      <div class="channel-info">
+        <div class="channel-name">Browser Push</div>
+        <div class="channel-sub">Notifiche su questo dispositivo</div>
+      </div>
+      <div class="channel-status" id="browser-push-status">–</div>
+    </div>
+    <div class="channel-row">
+      <div class="channel-icon">📊</div>
+      <div class="channel-info">
+        <div class="channel-name">Dashboard Live</div>
+        <div class="channel-sub">Tutti i segnali visibili qui in tempo reale</div>
+      </div>
+      <div class="channel-status">✓ ATTIVO</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER NAV (mobile) ── -->
+<div id="footer-nav">
+  <button class="fn-btn active" onclick="showSection('dashboard',null,'fn-dashboard')" id="fn-dashboard"><span class="icon">📊</span>Dashboard</button>
+  <button class="fn-btn" onclick="showSection('storico',null,'fn-storico')" id="fn-storico"><span class="icon">📋</span>Storico</button>
+  <button class="fn-btn" onclick="showSection('impostazioni',null,'fn-impostazioni')" id="fn-impostazioni"><span class="icon">⚙️</span>Filtri</button>
+  <button class="fn-btn" onclick="showSection('notifiche',null,'fn-notifiche')" id="fn-notifiche"><span class="icon">🔔</span>Notifiche</button>
+</div>
+
+<script>
+// ── Navigazione ─────────────────────────────────────────────────────────────
+function showSection(id, tabEl, fnId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.fn-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  if (tabEl) tabEl.classList.add('active');
+  if (fnId) document.getElementById(fnId).classList.add('active');
+}
+
+// ── Countdown ────────────────────────────────────────────────────────────────
+function countdown(isoTime) {
+  const diff = new Date(isoTime) - new Date();
+  if (diff <= 0) return 'LIVE';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  if (h > 0) return `${h}h ${m}m al kickoff`;
+  if (m > 0) return `${m}m ${s}s al kickoff`;
+  return `${s}s al kickoff`;
+}
+
+// ── Copia messaggio Telegram ─────────────────────────────────────────────────
+function copyTelegram(pick, btnId) {
+  const badge = pick.signal === 'strong' ? '🔥 SEGNALE FORTE' : '✅ SEGNALE';
+  const msg = badge + ' | PLUSVALORE\n\n' +
+    '⚽ ' + pick.home + ' vs ' + pick.away + '\n' +
+    '🏆 ' + pick.league + '\n' +
+    '⏰ Kick-off: ' + pick.time + '\n\n' +
+    '📐 Analisi Angoli\n' +
+    '• Media casa: ' + pick.home_avg + ' ang/partita\n' +
+    '• Media trasferta: ' + pick.away_avg + ' ang/partita\n' +
+    '• Combinata: ' + pick.combined + '\n' +
+    '• Over 9.5 storico: ' + pick.over_pct + '%\n\n' +
+    '💡 ' + pick.analysis + '\n\n' +
+    '🎯 PICK: Over 9.5 Angoli\n' +
+    '📊 Track record → livepick.com/plusvalore';
+  navigator.clipboard.writeText(msg).catch(() => {});
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.textContent = '✓ Copiato';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '📤 Telegram'; btn.classList.remove('copied'); }, 2000);
+}
+
+// ── Render Dashboard ─────────────────────────────────────────────────────────
+function renderDashboard(data) {
+  const picks = data.picks || [];
+  document.getElementById('s-picks').textContent  = picks.length;
+  document.getElementById('s-strong').textContent = picks.filter(p => p.signal === 'strong').length;
+  document.getElementById('s-total').textContent  = data.total_scanned || 0;
+
+  if (data.last_scan) {
+    const d = new Date(data.last_scan);
+    document.getElementById('last-scan').textContent = d.toLocaleTimeString('it-IT', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  const container = document.getElementById('picks-container');
+  if (picks.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Nessun segnale oggi</div><div class="empty-desc">Il filtro è rigoroso — meglio zero segnali che segnali sbagliati.<br>Il sistema scansiona ogni ora.</div></div>';
+    return;
+  }
+
+  container.innerHTML = '';
+  picks.forEach((p, i) => {
+    const statusClass  = p.alerted ? 'alerted' : p.signal;
+    const badgeText    = p.alerted ? 'ALERT INVIATO' : (p.signal === 'strong' ? 'FORTE' : 'MEDIO');
+    const badgeClass   = p.alerted ? 'alerted' : p.signal;
+    const barClass     = p.alerted ? 'alerted' : p.signal;
+    const card = document.createElement('div');
+    card.className = 'card ' + statusClass;
+    card.innerHTML = `
+      <div class="card-bar ${barClass}"></div>
+      <div class="card-body">
+        <div class="card-row1">
+          <div class="card-league">${esc(p.league)}</div>
+          <div class="card-badges">
+            <div class="badge ${badgeClass}">${badgeText}</div>
+            <div class="card-time">${esc(p.time)}</div>
+          </div>
+        </div>
+        <div class="card-teams">${esc(p.home)} <span class="vs">vs</span> ${esc(p.away)}</div>
+        <div class="countdown" id="cd-${i}">⏱ Calcolo...</div>
+        <div class="stats-grid">
+          <div class="sc"><div class="sc-val green">${p.home_avg}</div><div class="sc-lbl">Media casa</div></div>
+          <div class="sc"><div class="sc-val green">${p.away_avg}</div><div class="sc-lbl">Media trasferta</div></div>
+          <div class="sc"><div class="sc-val yellow">${p.over_pct}%</div><div class="sc-lbl">Over 9.5</div></div>
+        </div>
+        <div class="analysis">💡 ${esc(p.analysis)}</div>
+        <div class="card-footer">
+          <div class="combined-info">Combinata <b>${p.combined}</b> ang/partita</div>
+          <button class="btn-tg" id="btg-${i}" onclick="copyTelegram(window._picks[${i}],'btg-${i}')">📤 Telegram</button>
+        </div>
+      </div>`;
+    container.appendChild(card);
+  });
+
+  window._picks = picks;
+
+  // Avvia countdown live
+  function updateCountdowns() {
+    picks.forEach((p, i) => {
+      const el = document.getElementById('cd-' + i);
+      if (!el) return;
+      const txt = countdown(p.timestamp);
+      el.textContent = txt === 'LIVE' ? '🟢 LIVE' : '⏱ ' + txt;
+      el.className = 'countdown' + (txt !== 'LIVE' && new Date(p.timestamp) - new Date() < 3600000 ? ' soon' : '');
+    });
+  }
+  updateCountdowns();
+  if (window._cdInterval) clearInterval(window._cdInterval);
+  window._cdInterval = setInterval(updateCountdowns, 1000);
+}
+
+// ── Render Storico ───────────────────────────────────────────────────────────
+function renderStorico(data) {
+  const picks = (data.picks || []).filter(p => p.result !== null);
+  const wins  = picks.filter(p => p.result === 'WIN').length;
+  const wr    = picks.length ? Math.round(wins / picks.length * 100) : 0;
+  const roi   = picks.length ? ((wins * 0.54 - (picks.length - wins)) / picks.length * 100).toFixed(1) : 0;
+
+  document.getElementById('t-tot').textContent = picks.length || '–';
+  document.getElementById('t-win').textContent = wins || '–';
+  document.getElementById('t-wr').textContent  = picks.length ? wr + '%' : '–%';
+  document.getElementById('t-roi').textContent = picks.length ? (roi > 0 ? '+' : '') + roi + '%' : '–%';
+
+  const container = document.getElementById('history-container');
+  if (picks.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Nessuno storico</div><div class="empty-desc">Le partite passate con i risultati appariranno qui.</div></div>';
+    return;
+  }
+  container.innerHTML = '';
+  picks.forEach(p => {
+    const resultClass = p.result === 'WIN' ? 'win' : (p.result === 'LOSS' ? 'loss' : 'pending');
+    const resultText  = p.result === 'WIN' ? '✓ WIN' : (p.result === 'LOSS' ? '✗ LOSS' : '⏳');
+    const card = document.createElement('div');
+    card.className = 'history-card';
+    card.innerHTML = `
+      <div class="history-left">
+        <div class="history-teams">${esc(p.home)} vs ${esc(p.away)}</div>
+        <div class="history-meta">${esc(p.date || '')} · ${esc(p.league)} · Combinata ${p.combined}</div>
+      </div>
+      <div class="history-right">
+        <div class="history-result ${resultClass}">${resultText}</div>
+        <div class="history-pick">Over 9.5 Angoli</div>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+// ── Render Impostazioni ──────────────────────────────────────────────────────
+function renderSettings(cfg) {
+  document.getElementById('cfg-threshold').textContent = 'Over ' + (cfg.corner_threshold || '–');
+  document.getElementById('cfg-combined').textContent  = (cfg.min_combined_avg || '–') + ' ang/partita';
+  document.getElementById('cfg-pct').textContent       = (cfg.min_over_pct || '–') + '%';
+  document.getElementById('cfg-hours').textContent     = (cfg.alert_hours_before || '–') + ' ore';
+  document.getElementById('cfg-active').textContent    = cfg.active ? '✓ Sì' : '✗ No';
+}
+
+// ── Push Notifications ───────────────────────────────────────────────────────
+async function enablePush() {
+  const btn = document.getElementById('btn-push');
+  const status = document.getElementById('push-status');
+  try {
+    if (!window.OneSignal) { status.textContent = 'OneSignal non configurato. Vedi README.'; return; }
+    await OneSignal.Notifications.requestPermission();
+    const isEnabled = await OneSignal.Notifications.permissionNative === 'granted';
+    if (isEnabled) {
+      btn.textContent = '✓ Notifiche attive';
+      btn.disabled = true;
+      status.textContent = 'Riceverai alert direttamente su questo dispositivo.';
+      document.getElementById('browser-push-status').textContent = '✓ ATTIVO';
+      document.getElementById('browser-push-status').style.color = '#22C55E';
+    }
+  } catch(e) {
+    status.textContent = 'Errore: ' + e.message;
+  }
+}
+
+// ── Escape HTML ──────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Carica dati all'avvio ────────────────────────────────────────────────────
+async function loadAll() {
+  try {
+    const [picksRes, historyRes, cfgRes] = await Promise.all([
+      fetch('./picks.json?t=' + Date.now()),
+      fetch('./history.json?t=' + Date.now()),
+      fetch('./config.json?t=' + Date.now()),
+    ]);
+    const picks   = await picksRes.json();
+    const history = await historyRes.json();
+    const cfg     = await cfgRes.json();
+
+    renderDashboard(picks);
+    renderStorico(history);
+    renderSettings(cfg);
+  } catch(e) {
+    document.getElementById('picks-container').innerHTML =
+      '<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-title">Errore caricamento dati</div><div class="empty-desc">' + e.message + '</div></div>';
+  }
+}
+
+loadAll();
+setInterval(loadAll, 60000); // Ricarica ogni minuto
+</script>
+</body>
+</html>
